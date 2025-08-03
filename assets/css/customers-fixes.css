@@ -1,0 +1,287 @@
+/* Additional CSS fixes for Customer Management */
+
+/* Fix form validation styles */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control.is-valid,
+.form-select.is-valid {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Fix modal z-index issues */
+.modal {
+  z-index: 1055;
+}
+
+.modal-backdrop {
+  z-index: 1050;
+}
+
+/* Fix table responsive issues */
+@media (max-width: 768px) {
+  .table-responsive {
+    border: none;
+  }
+
+  .table-responsive .table {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+  }
+
+  .table-responsive .table td,
+  .table-responsive .table th {
+    padding: 0.5rem 0.25rem;
+    white-space: nowrap;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-group .btn {
+    margin-bottom: 2px;
+    border-radius: 0.25rem !important;
+  }
+}
+
+/* Fix loading button animation */
+.btn.loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid transparent;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btn-loading-spin 1s linear infinite;
+}
+
+@keyframes btn-loading-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Fix notification positioning */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  max-width: 400px;
+}
+
+/* Fix customer details modal content */
+.customer-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.customer-detail-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.customer-detail-item strong {
+  flex: 0 0 40%;
+  color: #495057;
+  font-weight: 600;
+}
+
+.customer-detail-item span {
+  flex: 1;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* Fix payment summary styling */
+.payment-summary-item .d-flex {
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.payment-summary-item .d-flex strong {
+  color: #495057;
+}
+
+/* Fix tab content spacing */
+.tab-content {
+  margin-top: 1rem;
+}
+
+.tab-pane {
+  min-height: 300px;
+}
+
+/* Fix empty state styling */
+.text-center.py-4 {
+  padding: 3rem 1rem !important;
+}
+
+.text-center.py-4 i {
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+/* Fix badge spacing */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge i {
+  font-size: 0.75em;
+}
+
+/* Fix input group styling */
+.input-group-text {
+  min-width: 45px;
+  justify-content: center;
+  font-weight: 600;
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+
+/* Fix modal header gradient */
+.modal-header {
+  background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+  color: white;
+  border-bottom: none;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.modal-header .modal-title {
+  font-weight: 600;
+}
+
+.modal-header .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+  opacity: 1;
+}
+
+/* Fix form spacing */
+.modal-body .row {
+  margin-bottom: 0;
+}
+
+.modal-body .row .col-md-6,
+.modal-body .row .col-md-4,
+.modal-body .row .col-md-8 {
+  margin-bottom: 0;
+}
+
+/* Fix pagination styling */
+.pagination {
+  margin-bottom: 0;
+}
+
+.pagination .page-link {
+  color: #00d4aa;
+  border-color: #dee2e6;
+  padding: 0.5rem 0.75rem;
+}
+
+.pagination .page-link:hover {
+  color: #00b894;
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: #00d4aa;
+  border-color: #00d4aa;
+  color: white;
+}
+
+/* Fix search and filter row */
+.card-body .row .col-md-4,
+.card-body .row .col-md-3,
+.card-body .row .col-md-2 {
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .card-body .row .col-md-4,
+  .card-body .row .col-md-3,
+  .card-body .row .col-md-2 {
+    margin-bottom: 0;
+  }
+}
+
+/* Fix stat card hover effect */
+.stat-card {
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Fix currency display */
+.currency-npr {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Fix alert styling */
+.alert {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.1), rgba(32, 201, 151, 0.1));
+  border-left: 4px solid #28a745;
+  color: #155724;
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(232, 62, 140, 0.1));
+  border-left: 4px solid #dc3545;
+  color: #721c24;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, rgba(23, 162, 184, 0.1), rgba(111, 66, 193, 0.1));
+  border-left: 4px solid #17a2b8;
+  color: #0c5460;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(253, 126, 20, 0.1));
+  border-left: 4px solid #ffc107;
+  color: #856404;
+}
