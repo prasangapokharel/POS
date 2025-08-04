@@ -46,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'] ?? 'unpaid';
     $notes = $_POST['notes'] ?? null;
     $vat_percentage = (float)($_POST['vat_percentage'] ?? 0);
+    $discount_type = $_POST['discount_type'] ?? 'none';
+    $discount_value = (float)($_POST['discount_value'] ?? 0);
     $item_ids = $_POST['item_id'] ?? [];
     $quantities = $_POST['quantity'] ?? [];
     $unit_prices = $_POST['unit_price'] ?? [];
@@ -119,18 +121,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($message_type !== 'error') {
-            $vat_amount = $total_amount * ($vat_percentage / 100);
-            $grand_total = $total_amount + $vat_amount;
+            // Calculate discount
+            $discount_amount = 0;
+            if ($discount_type === 'percentage' && $discount_value > 0) {
+                $discount_amount = $total_amount * ($discount_value / 100);
+            } elseif ($discount_type === 'fixed' && $discount_value > 0) {
+                $discount_amount = min($discount_value, $total_amount); // Don't allow discount greater than total
+            }
+
+            $discounted_amount = $total_amount - $discount_amount;
+            $vat_amount = $discounted_amount * ($vat_percentage / 100);
+            $grand_total = $discounted_amount + $vat_amount;
             $order_id = 'ORD' . strtoupper(uniqid());
 
             try {
                 $db->beginTransaction();
 
-                // Insert into orders table
-                $stmt = $db->prepare("INSERT INTO orders (order_id, customer_id, total_amount, vat_amount, grand_total, payment_method, status, notes) VALUES (:order_id, :customer_id, :total_amount, :vat_amount, :grand_total, :payment_method, :status, :notes)");
+                // Insert into orders table (including discount_amount)
+                $stmt = $db->prepare("INSERT INTO orders (order_id, customer_id, total_amount, discount_amount, vat_amount, grand_total, payment_method, status, notes) VALUES (:order_id, :customer_id, :total_amount, :discount_amount, :vat_amount, :grand_total, :payment_method, :status, :notes)");
                 $stmt->bindParam(':order_id', $order_id);
                 $stmt->bindParam(':customer_id', $customer_id);
                 $stmt->bindParam(':total_amount', $total_amount);
+                $stmt->bindParam(':discount_amount', $discount_amount);
                 $stmt->bindParam(':vat_amount', $vat_amount);
                 $stmt->bindParam(':grand_total', $grand_total);
                 $stmt->bindParam(':payment_method', $payment_method);
@@ -181,6 +193,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $success_message = 'Order created successfully! Order ID: ' . $order_id;
                 if (!empty($new_customer_name)) {
                     $success_message .= ' | New customer: ' . $new_customer_name;
+                }
+                if ($discount_amount > 0) {
+                    $success_message .= ' | Discount applied: ₹' . number_format($discount_amount, 2);
                 }
                 
                 header('Location: /order/list.php?message=' . urlencode($success_message) . '&type=success');
@@ -298,6 +313,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
+                    <!-- Discount Section -->
+                    <div class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <h3 class="text-lg font-medium text-gray-700 mb-4">Discount (Optional)</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="discount_type" class="block text-gray-700 text-sm font-medium mb-2">Discount Type</label>
+                                <select id="discount_type" name="discount_type"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option value="none">No Discount</option>
+                                    <option value="percentage">Percentage (%)</option>
+                                    <option value="fixed">Fixed Amount (₹)</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="discount_value" class="block text-gray-700 text-sm font-medium mb-2">Discount Value</label>
+                                <input type="number" id="discount_value" name="discount_value" value="0" min="0" step="0.01"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                       placeholder="Enter discount value">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Order Items -->
                     <div class="mb-6">
                         <h3 class="text-lg font-medium text-gray-700 mb-4">Order Items</h3>
@@ -332,7 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <div>
                                     <label class="block text-gray-700 text-sm font-medium mb-2">Subtotal</label>
-                                    <input type="text" class="item-subtotal w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-100" readonly value="Rs0.00">
+                                    <input type="text" class="item-subtotal w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-100" readonly value="₹0.00">
                                 </div>
                                 
                                 <div class="flex items-end">
@@ -355,15 +394,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="space-y-3">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">Subtotal:</span>
-                                <span id="subtotal-display" class="text-gray-800 font-medium">Rs0.00</span>
+                                <span id="subtotal-display" class="text-gray-800 font-medium">₹0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm" id="discount-row" style="display: none;">
+                                <span class="text-gray-600 font-medium">Discount (<span id="discount-type-display"></span>):</span>
+                                <span id="discount-amount-display" class="text-red-600 font-medium">-₹0.00</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600 font-medium">After Discount:</span>
+                                <span id="after-discount-display" class="text-gray-800 font-medium">₹0.00</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600 font-medium">VAT (<span id="vat-percent-display">0</span>%):</span>
-                                <span id="vat-amount-display" class="text-gray-800 font-medium">Rs0.00</span>
+                                <span id="vat-amount-display" class="text-gray-800 font-medium">₹0.00</span>
                             </div>
                             <div class="flex justify-between text-lg font-semibold border-t border-gray-200 pt-3">
                                 <span class="text-gray-800">Grand Total:</span>
-                                <span id="grand-total-display" class="text-primary">Rs0.00</span>
+                                <span id="grand-total-display" class="text-primary">₹0.00</span>
                             </div>
                         </div>
                     </div>
@@ -415,6 +462,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const vatPercentageInput = document.getElementById('vat_percentage');
             const customerSelect = document.getElementById('customer_id');
             const newCustomerInput = document.getElementById('new_customer_name');
+            const discountTypeSelect = document.getElementById('discount_type');
+            const discountValueInput = document.getElementById('discount_value');
 
             // Customer selection logic
             customerSelect.addEventListener('change', function() {
@@ -435,6 +484,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             });
 
+            // Discount type change handler
+            discountTypeSelect.addEventListener('change', function() {
+                const discountRow = document.getElementById('discount-row');
+                if (this.value === 'none') {
+                    discountValueInput.value = '0';
+                    discountValueInput.disabled = true;
+                    discountRow.style.display = 'none';
+                } else {
+                    discountValueInput.disabled = false;
+                    discountRow.style.display = 'flex';
+                }
+                calculateTotals();
+            });
+
             function calculateTotals() {
                 let subtotal = 0;
                 
@@ -443,18 +506,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     const unitPrice = parseFloat(row.querySelector('.item-unit-price').value) || 0;
                     const itemSubtotal = quantity * unitPrice;
                     
-                    row.querySelector('.item-subtotal').value = `Rs${itemSubtotal.toFixed(2)}`;
+                    row.querySelector('.item-subtotal').value = `₹${itemSubtotal.toFixed(2)}`;
                     subtotal += itemSubtotal;
                 });
 
-                const vatPercent = parseFloat(vatPercentageInput.value) || 0;
-                const vatAmount = subtotal * (vatPercent / 100);
-                const grandTotal = subtotal + vatAmount;
+                // Calculate discount
+                const discountType = discountTypeSelect.value;
+                const discountValue = parseFloat(discountValueInput.value) || 0;
+                let discountAmount = 0;
 
-                document.getElementById('subtotal-display').textContent = `Rs${subtotal.toFixed(2)}`;
+                if (discountType === 'percentage' && discountValue > 0) {
+                    discountAmount = subtotal * (discountValue / 100);
+                } else if (discountType === 'fixed' && discountValue > 0) {
+                    discountAmount = Math.min(discountValue, subtotal);
+                }
+
+                const afterDiscount = subtotal - discountAmount;
+                const vatPercent = parseFloat(vatPercentageInput.value) || 0;
+                const vatAmount = afterDiscount * (vatPercent / 100);
+                const grandTotal = afterDiscount + vatAmount;
+
+                // Update displays
+                document.getElementById('subtotal-display').textContent = `₹${subtotal.toFixed(2)}`;
+                document.getElementById('after-discount-display').textContent = `₹${afterDiscount.toFixed(2)}`;
                 document.getElementById('vat-percent-display').textContent = vatPercent.toFixed(0);
-                document.getElementById('vat-amount-display').textContent = `Rs${vatAmount.toFixed(2)}`;
-                document.getElementById('grand-total-display').textContent = `Rs${grandTotal.toFixed(2)}`;
+                document.getElementById('vat-amount-display').textContent = `₹${vatAmount.toFixed(2)}`;
+                document.getElementById('grand-total-display').textContent = `₹${grandTotal.toFixed(2)}`;
+
+                // Update discount display
+                if (discountAmount > 0) {
+                    document.getElementById('discount-row').style.display = 'flex';
+                    document.getElementById('discount-amount-display').textContent = `-₹${discountAmount.toFixed(2)}`;
+                    
+                    let discountTypeText = '';
+                    if (discountType === 'percentage') {
+                        discountTypeText = `${discountValue}%`;
+                    } else if (discountType === 'fixed') {
+                        discountTypeText = `₹${discountValue}`;
+                    }
+                    document.getElementById('discount-type-display').textContent = discountTypeText;
+                } else {
+                    document.getElementById('discount-row').style.display = 'none';
+                }
             }
 
             function updateItemPriceAndStock(selectElement) {
@@ -510,7 +603,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div>
                         <label class="block text-gray-700 text-sm font-medium mb-2">Subtotal</label>
-                        <input type="text" class="item-subtotal w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-100" readonly value="Rs0.00">
+                        <input type="text" class="item-subtotal w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-100" readonly value="₹0.00">
                     </div>
                     <div class="flex items-end">
                         <button type="button" class="remove-item-btn bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-md text-sm w-full">
@@ -544,6 +637,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             addItemBtn.addEventListener('click', createItemRow);
             vatPercentageInput.addEventListener('input', calculateTotals);
+            discountValueInput.addEventListener('input', calculateTotals);
 
             // Initial calculation
             calculateTotals();

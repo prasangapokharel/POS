@@ -37,7 +37,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
         $db->beginTransaction();
 
         // Get order details to reverse stock and customer balance
-        $stmt = $db->prepare("SELECT o.grand_total, o.status, o.customer_id, oi.item_id, oi.quantity FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE o.order_id = :order_id");
+        $stmt = $db->prepare("SELECT o.grand_total, o.status, o.customer_id, oi.item_id, oi.quantity, oi.unit_price FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE o.order_id = :order_id");
         $stmt->bindParam(':order_id', $order_id_to_delete);
         $stmt->execute();
         $order_details = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -68,7 +68,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
                 $stmt->bindParam(':transaction_id', $transaction_id);
                 $stmt->bindParam(':item_id', $detail['item_id']);
                 $stmt->bindParam(':quantity', $detail['quantity'], PDO::PARAM_INT);
-                $stmt->bindParam(':total_cost', $detail['quantity'] * $detail['unit_price']); // Assuming unit_price is available or fetched
+                $total_cost_for_log = $detail['quantity'] * $detail['unit_price'];
+                $stmt->bindParam(':total_cost', $total_cost_for_log);
                 $stmt->bindParam(':reference_id', $order_id_to_delete);
                 $stmt->bindParam(':customer_id', $customer_id);
                 $stmt->bindParam(':created_by', $_SESSION['admin_name']);
@@ -138,7 +139,7 @@ try {
         <main class="flex-1">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-gray-800">Orders List</h1>
-                <a href="/order/new-order.php" class="bg-primary hover:bg-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <a href="/order/new-order.php" class="bg-primary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                     Create New Order
                 </a>
             </div>

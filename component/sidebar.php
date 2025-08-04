@@ -114,12 +114,12 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
                 </a>
             </li>
             <li class="nav-item">
-                <a class="flex items-center p-3 rounded-lg text-gray-300 hover:bg-primary hover:text-white" href="#">
+                <a class="flex items-center p-3 rounded-lg text-gray-300 hover:bg-primary hover:text-white" href="/report/report.php">
                     <i class="fas fa-chart-bar mr-3"></i> Reports
                 </a>
             </li>
             <li class="nav-item">
-                <a class="flex items-center p-3 rounded-lg text-gray-300 hover:bg-primary hover:text-white" href="#">
+                <a class="flex items-center p-3 rounded-lg text-gray-300 hover:bg-primary hover:text-white" href="/settings/settings.php">
                     <i class="fas fa-cog mr-3"></i> Settings
                 </a>
             </li>

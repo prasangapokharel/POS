@@ -159,7 +159,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="dropdown-item block px-4 py-3 text-gray-300 hover:text-white">
+                    <a href="/settings/settings.php" class="dropdown-item block px-4 py-3 text-gray-300 hover:text-white">
                         <i class="fas fa-cog mr-3"></i> Settings
                     </a>
                 </li>
@@ -216,7 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
+<script src="../assets/js/tailwind.config.js"> </script>
 <!-- Font Awesome -->
-<link rel="stylesheet"
-       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
